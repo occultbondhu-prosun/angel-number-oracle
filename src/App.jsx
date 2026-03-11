@@ -195,6 +195,21 @@ export default function AngelNumberTool() {
   const [showResult, setShowResult] = useState(false);
   const [orbPulse, setOrbPulse] = useState(false);
 
+  // Auto-resize iframe height for WordPress embed
+  useEffect(() => {
+    const sendHeight = () => {
+      const height = document.body.scrollHeight;
+      window.parent.postMessage(
+        { type: "angelToolHeight", height: height },
+        "*"
+      );
+    };
+    sendHeight();
+    const observer = new ResizeObserver(sendHeight);
+    observer.observe(document.body);
+    return () => observer.disconnect();
+  }, []);
+
   const lookup = async () => {
     const clean = input.replace(/\s/g, "");
     if (!clean) { setError("Enter a number to reveal its meaning."); return; }
@@ -266,9 +281,9 @@ export default function AngelNumberTool() {
       flexDirection: "column",
       alignItems: "center",
       justifyContent: "flex-start",
-      padding: "0 16px 60px",
+      padding: "0 16px 100px",
       position: "relative",
-      overflow: "hidden",
+      overflow: "visible",
     }}>
       <StarField />
 
