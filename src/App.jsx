@@ -75,8 +75,9 @@ export default function AngelNumberTool() {
     setTimeout(send, 500);
     setTimeout(send, 1500);
     setTimeout(send, 3000);
+    const target = document.getElementById("content-wrap") || document.body;
     const observer = new ResizeObserver(send);
-    observer.observe(document.getElementById("content-wrap") || document.body);
+    observer.observe(target);
     return () => observer.disconnect();
   }, [showResult, loading]);
 
@@ -147,27 +148,29 @@ export default function AngelNumberTool() {
         .qbtn:hover { background:rgba(255,255,255,0.12)!important; }
         .rbtn:hover { opacity:.88; transform:translateY(-1px); }
         input:focus { outline:none; border-color:#a78bfa!important; box-shadow:0 0 0 3px rgba(167,139,250,.25)!important; }
+        * { box-sizing: border-box; }
       `}</style>
 
-      {/* Main content — id="content-wrap" is critical for height measurement */}
+      {/* Main content */}
       <div id="content-wrap" style={{
         position: "relative", zIndex: 1,
         display: "flex", flexDirection: "column", alignItems: "center",
-        padding: "48px 16px 80px",
+        padding: "48px 12px 80px",
         width: "100%",
       }}>
 
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "36px" }}>
+        <div style={{ textAlign: "center", marginBottom: "36px", width: "100%", maxWidth: "500px" }}>
           <div style={{ fontSize: "28px", animation: "shimmer 3s infinite", marginBottom: "12px" }}>✦ ✧ ✦</div>
           <h1 style={{
-            fontSize: "clamp(24px, 5vw, 44px)", fontWeight: 400,
+            fontSize: "clamp(22px, 5vw, 44px)", fontWeight: 400,
             letterSpacing: ".12em", textTransform: "uppercase",
             marginBottom: "10px",
             background: "linear-gradient(135deg, #e8d5ff, #b794f4, #e8d5ff)",
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            wordBreak: "break-word",
           }}>Angel Number Oracle</h1>
-          <p style={{ color: "#9d8bbd", fontSize: "13px", letterSpacing: ".2em", textTransform: "uppercase" }}>
+          <p style={{ color: "#9d8bbd", fontSize: "clamp(10px, 2.5vw, 13px)", letterSpacing: ".15em", textTransform: "uppercase" }}>
             Decode the universe's messages to you
           </p>
         </div>
@@ -177,25 +180,29 @@ export default function AngelNumberTool() {
           width: "100%", maxWidth: "500px",
           background: "rgba(255,255,255,0.04)",
           border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: "24px", padding: "28px 24px",
+          borderRadius: "20px",
+          padding: "20px 16px",
           backdropFilter: "blur(20px)",
-          marginBottom: "28px",
+          marginBottom: "24px",
         }}>
-          <p style={{ fontSize: "12px", color: "#9d8bbd", letterSpacing: ".15em", textTransform: "uppercase", marginBottom: "14px", textAlign: "center" }}>
-            Enter your angel number
-          </p>
+          <p style={{
+            fontSize: "11px", color: "#9d8bbd",
+            letterSpacing: ".15em", textTransform: "uppercase",
+            marginBottom: "14px", textAlign: "center",
+          }}>Enter your angel number</p>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "18px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
             <input
               value={input}
               onChange={e => setInput(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
               onKeyDown={e => e.key === "Enter" && lookup()}
               placeholder="e.g. 1111, 444, 222..."
               style={{
-                width: "100%", background: "rgba(255,255,255,0.06)",
+                width: "100%",
+                background: "rgba(255,255,255,0.06)",
                 border: "1px solid rgba(255,255,255,0.15)",
-                borderRadius: "14px", padding: "15px 20px",
-                color: "#e8e0f0", fontSize: "22px",
+                borderRadius: "14px", padding: "14px 16px",
+                color: "#e8e0f0", fontSize: "clamp(18px, 4vw, 22px)",
                 letterSpacing: ".15em", textAlign: "center",
                 fontFamily: "Georgia, serif",
                 transition: "border-color 0.3s, box-shadow 0.3s",
@@ -209,28 +216,34 @@ export default function AngelNumberTool() {
                 width: "100%",
                 background: "linear-gradient(135deg, #a78bfa, #7c3aed)",
                 border: "none", borderRadius: "14px",
-                padding: "15px", color: "#fff",
-                fontSize: "17px", cursor: loading ? "wait" : "pointer",
+                padding: "14px", color: "#fff",
+                fontSize: "clamp(14px, 3.5vw, 17px)",
+                cursor: loading ? "wait" : "pointer",
                 transition: "all 0.3s",
-                letterSpacing: ".15em", fontFamily: "Georgia, serif",
+                letterSpacing: ".15em",
+                fontFamily: "Georgia, serif",
               }}
             >{loading ? "Reading the cosmos..." : "✦ Reveal Meaning"}</button>
           </div>
 
-          {error && <p style={{ color: "#f87171", fontSize: "13px", textAlign: "center", marginBottom: "14px" }}>{error}</p>}
+          {error && (
+            <p style={{ color: "#f87171", fontSize: "13px", textAlign: "center", marginBottom: "12px" }}>{error}</p>
+          )}
 
-          <p style={{ fontSize: "11px", color: "#6b5a8a", letterSpacing: ".2em", textTransform: "uppercase", marginBottom: "10px", textAlign: "center" }}>
-            Popular numbers
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "7px", justifyContent: "center" }}>
+          <p style={{
+            fontSize: "10px", color: "#6b5a8a",
+            letterSpacing: ".15em", textTransform: "uppercase",
+            marginBottom: "10px", textAlign: "center",
+          }}>Popular numbers</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", justifyContent: "center" }}>
             {["111","222","333","444","555","777","888","999","1111","1212"].map(n => (
               <button key={n} className="qbtn" onClick={() => setInput(n)} style={{
                 background: "rgba(255,255,255,0.06)",
                 border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: "8px", padding: "5px 13px",
-                color: "#c4b5fd", fontSize: "13px",
+                borderRadius: "8px", padding: "5px 12px",
+                color: "#c4b5fd", fontSize: "clamp(11px, 2.5vw, 13px)",
                 cursor: "pointer", transition: "all 0.2s",
-                fontFamily: "Georgia, serif", letterSpacing: ".1em",
+                fontFamily: "Georgia, serif",
               }}>{n}</button>
             ))}
           </div>
@@ -240,7 +253,9 @@ export default function AngelNumberTool() {
         {loading && (
           <div style={{ textAlign: "center", marginBottom: "20px" }}>
             <div style={{ fontSize: "36px", animation: "spin 2s linear infinite", display: "inline-block" }}>✦</div>
-            <p style={{ color: "#9d8bbd", fontSize: "12px", letterSpacing: ".2em", marginTop: "10px" }}>READING THE COSMOS…</p>
+            <p style={{ color: "#9d8bbd", fontSize: "12px", letterSpacing: ".2em", marginTop: "10px" }}>
+              READING THE COSMOS…
+            </p>
           </div>
         )}
 
@@ -256,8 +271,8 @@ export default function AngelNumberTool() {
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
                 background: `radial-gradient(circle, ${ac}40, ${ac}15)`,
                 border: `2px solid ${ac}60`, borderRadius: "50%",
-                width: "96px", height: "96px",
-                fontSize: "26px", color: ac,
+                width: "90px", height: "90px",
+                fontSize: "clamp(18px, 4vw, 26px)", color: ac,
                 boxShadow: `0 0 40px ${ac}40`,
                 animation: "shimmer 2.5s ease infinite",
               }}>{result.number}</div>
@@ -267,73 +282,101 @@ export default function AngelNumberTool() {
             <div style={{
               background: "rgba(255,255,255,0.04)",
               border: `1px solid ${ac}30`,
-              borderRadius: "24px", overflow: "hidden",
+              borderRadius: "20px",
+              overflow: "hidden",
               boxShadow: `0 0 60px ${ac}15`,
               marginBottom: "16px",
+              width: "100%",
             }}>
               {/* Title & keywords */}
               <div style={{
-                padding: "24px 24px 18px",
+                padding: "18px 16px 14px",
                 borderBottom: `1px solid ${ac}20`,
                 background: `linear-gradient(135deg, ${ac}12, transparent)`,
               }}>
                 <h2 style={{
-                  fontSize: "22px", fontWeight: 400,
-                  letterSpacing: ".08em", color: ac, marginBottom: "10px",
+                  fontSize: "clamp(16px, 4vw, 22px)", fontWeight: 400,
+                  letterSpacing: ".05em", color: ac,
+                  marginBottom: "10px",
+                  wordBreak: "break-word", lineHeight: "1.3",
                 }}>{result.data.title}</h2>
-                <div style={{ display: "flex", gap: "7px", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                   {result.data.keywords.map(k => (
                     <span key={k} style={{
-                      background: `${ac}20`, border: `1px solid ${ac}40`,
-                      borderRadius: "20px", padding: "3px 11px",
-                      fontSize: "11px", color: ac, letterSpacing: ".08em",
+                      background: `${ac}20`,
+                      border: `1px solid ${ac}40`,
+                      borderRadius: "20px", padding: "3px 10px",
+                      fontSize: "clamp(10px, 2.5vw, 11px)",
+                      color: ac, letterSpacing: ".05em",
+                      wordBreak: "break-word",
                     }}>{k}</span>
                   ))}
                 </div>
               </div>
 
               {/* Meaning */}
-              <div style={{ padding: "20px 24px", borderBottom: `1px solid rgba(255,255,255,0.05)` }}>
-                <p style={{ lineHeight: "1.85", fontSize: "15px", color: "#d4c8e8", fontStyle: "italic" }}>
-                  {result.data.meaning}
-                </p>
+              <div style={{ padding: "16px", borderBottom: `1px solid rgba(255,255,255,0.05)` }}>
+                <p style={{
+                  lineHeight: "1.8",
+                  fontSize: "clamp(13px, 3.5vw, 15px)",
+                  color: "#d4c8e8", fontStyle: "italic",
+                  wordBreak: "break-word",
+                }}>{result.data.meaning}</p>
               </div>
 
               {/* Metadata grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1px", background: "rgba(255,255,255,0.05)" }}>
+              <div style={{
+                display: "grid", gridTemplateColumns: "1fr 1fr",
+                gap: "1px", background: "rgba(255,255,255,0.05)",
+              }}>
                 {[
                   ["✦ Chakra", result.data.chakra],
                   ["⊕ Element", result.data.element],
                   ["◈ Frequency", result.data.frequency],
                   ["◯ Energy Color", <span style={{ color: ac }}>●</span>],
                 ].map(([label, val]) => (
-                  <div key={label} style={{ padding: "14px 18px", background: "rgba(255,255,255,0.02)" }}>
-                    <div style={{ fontSize: "9px", color: "#6b5a8a", letterSpacing: ".2em", textTransform: "uppercase", marginBottom: "4px" }}>{label}</div>
-                    <div style={{ fontSize: "14px", color: "#e8e0f0" }}>{val}</div>
+                  <div key={label} style={{ padding: "12px 14px", background: "rgba(255,255,255,0.02)" }}>
+                    <div style={{
+                      fontSize: "9px", color: "#6b5a8a",
+                      letterSpacing: ".1em", textTransform: "uppercase",
+                      marginBottom: "4px",
+                    }}>{label}</div>
+                    <div style={{
+                      fontSize: "clamp(12px, 3vw, 14px)",
+                      color: "#e8e0f0", wordBreak: "break-word",
+                    }}>{val}</div>
                   </div>
                 ))}
               </div>
 
               {/* Affirmation */}
               <div style={{
-                padding: "20px 24px",
+                padding: "16px",
                 background: `linear-gradient(135deg, ${ac}08, transparent)`,
                 borderTop: `1px solid ${ac}20`,
               }}>
-                <p style={{ fontSize: "10px", color: "#6b5a8a", letterSpacing: ".25em", textTransform: "uppercase", marginBottom: "10px" }}>
-                  ✧ Your Affirmation
-                </p>
                 <p style={{
-                  fontSize: "15px", lineHeight: "1.7",
-                  color: ac, fontStyle: "italic",
-                  borderLeft: `2px solid ${ac}50`, paddingLeft: "14px",
+                  fontSize: "10px", color: "#6b5a8a",
+                  letterSpacing: ".2em", textTransform: "uppercase",
+                  marginBottom: "10px",
+                }}>✧ Your Affirmation</p>
+                <p style={{
+                  fontSize: "clamp(13px, 3.5vw, 15px)",
+                  lineHeight: "1.7", color: ac, fontStyle: "italic",
+                  borderLeft: `2px solid ${ac}50`,
+                  paddingLeft: "12px",
+                  wordBreak: "break-word",
                 }}>"{result.data.affirmation}"</p>
               </div>
             </div>
 
-            <p style={{ textAlign: "center", fontSize: "11px", color: "#4a3a6a", letterSpacing: ".1em", paddingBottom: "20px" }}>
-              ✦ The universe speaks in patterns — you were meant to see {result.number} ✦
-            </p>
+            <p style={{
+              textAlign: "center",
+              fontSize: "clamp(10px, 2.5vw, 11px)",
+              color: "#4a3a6a", letterSpacing: ".1em",
+              paddingBottom: "20px",
+              wordBreak: "break-word",
+            }}>✦ The universe speaks in patterns — you were meant to see {result.number} ✦</p>
           </div>
         )}
       </div>
