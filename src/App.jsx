@@ -158,14 +158,17 @@ const StarField = () => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
     const ctx = canvas.getContext("2d");
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    const stars = Array.from({ length: 120 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
+    const stars = Array.from({ length: 100 }, () => ({
+      x: Math.random(),
+      y: Math.random(),
       r: Math.random() * 1.5 + 0.3,
-      o: Math.random(),
       speed: Math.random() * 0.008 + 0.002,
       phase: Math.random() * Math.PI * 2,
     }));
@@ -175,16 +178,31 @@ const StarField = () => {
       stars.forEach((s) => {
         const opacity = 0.3 + 0.5 * Math.abs(Math.sin(t * s.speed + s.phase));
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.arc(s.x * canvas.width, s.y * canvas.height, s.r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255,255,255,${opacity})`;
         ctx.fill();
       });
       frame = requestAnimationFrame(draw);
     };
     frame = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", resize);
+    };
   }, []);
-  return <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: "fixed",
+        top: 0, left: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+        zIndex: 0,
+      }}
+    />
+  );
 };
 
 export default function AngelNumberTool() {
@@ -195,16 +213,22 @@ export default function AngelNumberTool() {
   const [showResult, setShowResult] = useState(false);
   const [orbPulse, setOrbPulse] = useState(false);
 
-  // Auto-resize iframe height for WordPress embed
+  // Send height to WordPress iframe parent
   useEffect(() => {
     const sendHeight = () => {
-      const height = document.body.scrollHeight;
+      const height = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight
+      );
       window.parent.postMessage(
         { type: "angelToolHeight", height: height },
         "*"
       );
     };
     sendHeight();
+    setTimeout(sendHeight, 500);
+    setTimeout(sendHeight, 1500);
+    setTimeout(sendHeight, 3000);
     const observer = new ResizeObserver(sendHeight);
     observer.observe(document.body);
     return () => observer.disconnect();
@@ -217,9 +241,7 @@ export default function AngelNumberTool() {
     setLoading(true);
     setShowResult(false);
     setOrbPulse(true);
-
     await new Promise(r => setTimeout(r, 1400));
-
     if (angelNumbers[clean]) {
       setResult({ type: "preset", data: angelNumbers[clean], number: clean });
     } else {
@@ -242,19 +264,19 @@ export default function AngelNumberTool() {
   "title": "Short mystical title (2-4 words)",
   "meaning": "2-3 sentence spiritual interpretation of this angel number — mystical, poetic, empowering tone",
   "keywords": ["keyword1", "keyword2", "keyword3"],
-  "chakra": "one chakra name or 'All'",
+  "chakra": "one chakra name or All",
   "color": "a hex color that feels spiritually resonant for this number",
   "affirmation": "A first-person affirmation related to this number's energy",
   "element": "Earth, Air, Fire, Water, or Ether",
-  "frequency": "A Hz frequency number as a string like '528 Hz'"
+  "frequency": "A Hz frequency number as a string like 528 Hz"
 }`
             }]
           })
         });
         const data = await response.json();
         const text = data.content?.map(b => b.text || "").join("") || "";
-        const clean2 = text.replace(/```json|```/g, "").trim();
-        const parsed = JSON.parse(clean2);
+        const cleaned = text.replace(/```json|```/g, "").trim();
+        const parsed = JSON.parse(cleaned);
         setResult({ type: "ai", data: parsed, number: clean });
       } catch {
         setError("Could not decode this number's frequency. Try again.");
@@ -263,7 +285,6 @@ export default function AngelNumberTool() {
         return;
       }
     }
-
     setLoading(false);
     setOrbPulse(false);
     setTimeout(() => setShowResult(true), 100);
@@ -272,234 +293,285 @@ export default function AngelNumberTool() {
   const accentColor = result?.data?.color || "#a78bfa";
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "radial-gradient(ellipse at 20% 20%, #0d0520 0%, #050010 40%, #000308 100%)",
-      fontFamily: "'Georgia', serif",
-      color: "#e8e0f0",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "flex-start",
-      padding: "0 16px 100px",
-      position: "relative",
-      overflow: "visible",
-    }}>
+    <>
       <StarField />
-
-      <div style={{
-        position: "fixed",
-        top: "-120px", left: "50%", transform: "translateX(-50%)",
-        width: "600px", height: "600px",
-        background: `radial-gradient(circle, ${accentColor}18 0%, transparent 70%)`,
-        borderRadius: "50%",
-        pointerEvents: "none",
-        transition: "background 1.5s ease",
-        animation: "floatOrb 8s ease-in-out infinite",
-      }} />
-
       <style>{`
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          background: radial-gradient(ellipse at 20% 20%, #0d0520 0%, #050010 40%, #000308 100%);
+          min-height: 100vh;
+        }
         @keyframes floatOrb { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(20px)} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
         @keyframes shimmer { 0%,100%{opacity:.6} 50%{opacity:1} }
         @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
-        .glyph-btn:hover { transform: scale(1.04); background: rgba(255,255,255,0.1) !important; }
-        .number-input:focus { outline: none; }
-        * { box-sizing: border-box; }
+        .glyph-btn:hover { transform:scale(1.04); background:rgba(255,255,255,0.1) !important; }
+        .number-input:focus { outline:none; border-color: #a78bfa !important; box-shadow: 0 0 0 3px rgba(167,139,250,0.2); }
+        .reveal-btn:hover { opacity: 0.9; transform: translateY(-1px); }
       `}</style>
 
-      <div style={{ textAlign: "center", paddingTop: "56px", marginBottom: "40px", position: "relative", zIndex: 1 }}>
-        <div style={{ fontSize: "36px", marginBottom: "8px", animation: "shimmer 3s ease infinite" }}>✦ ✧ ✦</div>
-        <h1 style={{
-          fontSize: "clamp(28px, 5vw, 48px)",
-          fontWeight: "400",
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          margin: "0 0 10px",
-          background: "linear-gradient(135deg, #e8d5ff 0%, #b794f4 50%, #e8d5ff 100%)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-        }}>Angel Number Oracle</h1>
-        <p style={{ color: "#9d8bbd", fontSize: "14px", letterSpacing: "0.2em", textTransform: "uppercase", margin: 0 }}>
-          Decode the universe's messages to you
-        </p>
-      </div>
-
       <div style={{
-        width: "100%", maxWidth: "520px",
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: "24px",
-        padding: "32px",
-        backdropFilter: "blur(20px)",
-        position: "relative", zIndex: 1,
-        marginBottom: "32px",
+        fontFamily: "'Georgia', serif",
+        color: "#e8e0f0",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "0 16px 120px",
+        position: "relative",
+        zIndex: 1,
+        width: "100%",
       }}>
-        <p style={{ fontSize: "13px", color: "#9d8bbd", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "16px", textAlign: "center" }}>
-          Enter your angel number
-        </p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
-          <input
-            className="number-input"
-            value={input}
-            onChange={e => setInput(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
-            onKeyDown={e => e.key === "Enter" && lookup()}
-            placeholder="e.g. 1111, 444, 222..."
-            style={{
-              width: "100%", background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.15)",
-              borderRadius: "14px", padding: "16px 20px",
-              color: "#e8e0f0", fontSize: "22px",
-              letterSpacing: "0.15em", textAlign: "center",
-              fontFamily: "'Georgia', serif",
-              transition: "border-color 0.3s, box-shadow 0.3s",
-            }}
-          />
-          <button
-            onClick={lookup}
-            disabled={loading}
-            style={{
-              width: "100%",
-              background: `linear-gradient(135deg, #a78bfa, #7c3aed)`,
-              border: "none", borderRadius: "14px",
-              padding: "16px", color: "#fff",
-              fontSize: "18px", cursor: loading ? "wait" : "pointer",
-              transition: "all 0.3s",
-              animation: orbPulse ? "pulse 0.7s ease infinite" : "none",
-              letterSpacing: "0.2em",
-              fontFamily: "'Georgia', serif",
-            }}
-          >{loading ? "Reading the cosmos..." : "✦ Reveal Meaning"}</button>
+        {/* Ambient orb */}
+        <div style={{
+          position: "fixed",
+          top: "-120px", left: "50%",
+          transform: "translateX(-50%)",
+          width: "500px", height: "500px",
+          background: `radial-gradient(circle, ${accentColor}18 0%, transparent 70%)`,
+          borderRadius: "50%",
+          pointerEvents: "none",
+          transition: "background 1.5s ease",
+          animation: "floatOrb 8s ease-in-out infinite",
+          zIndex: 0,
+        }} />
+
+        {/* Header */}
+        <div style={{ textAlign: "center", paddingTop: "48px", marginBottom: "36px", position: "relative", zIndex: 1 }}>
+          <div style={{ fontSize: "32px", marginBottom: "8px", animation: "shimmer 3s ease infinite" }}>✦ ✧ ✦</div>
+          <h1 style={{
+            fontSize: "clamp(26px, 5vw, 46px)",
+            fontWeight: "400",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            marginBottom: "10px",
+            background: "linear-gradient(135deg, #e8d5ff 0%, #b794f4 50%, #e8d5ff 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          }}>Angel Number Oracle</h1>
+          <p style={{
+            color: "#9d8bbd", fontSize: "13px",
+            letterSpacing: "0.2em", textTransform: "uppercase",
+          }}>Decode the universe's messages to you</p>
         </div>
 
-        {error && <p style={{ color: "#f87171", fontSize: "13px", textAlign: "center", margin: "0 0 16px" }}>{error}</p>}
+        {/* Input Card */}
+        <div style={{
+          width: "100%", maxWidth: "500px",
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: "24px",
+          padding: "28px 24px",
+          backdropFilter: "blur(20px)",
+          position: "relative", zIndex: 1,
+          marginBottom: "28px",
+        }}>
+          <p style={{
+            fontSize: "12px", color: "#9d8bbd",
+            letterSpacing: "0.15em", textTransform: "uppercase",
+            marginBottom: "14px", textAlign: "center",
+          }}>Enter your angel number</p>
 
-        <div>
-          <p style={{ fontSize: "11px", color: "#6b5a8a", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "10px", textAlign: "center" }}>
-            Popular numbers
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "18px" }}>
+            <input
+              className="number-input"
+              value={input}
+              onChange={e => setInput(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+              onKeyDown={e => e.key === "Enter" && lookup()}
+              placeholder="e.g. 1111, 444, 222..."
+              style={{
+                width: "100%",
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                borderRadius: "14px",
+                padding: "15px 20px",
+                color: "#e8e0f0",
+                fontSize: "22px",
+                letterSpacing: "0.15em",
+                textAlign: "center",
+                fontFamily: "'Georgia', serif",
+                transition: "border-color 0.3s, box-shadow 0.3s",
+              }}
+            />
+            <button
+              className="reveal-btn"
+              onClick={lookup}
+              disabled={loading}
+              style={{
+                width: "100%",
+                background: "linear-gradient(135deg, #a78bfa, #7c3aed)",
+                border: "none",
+                borderRadius: "14px",
+                padding: "15px",
+                color: "#fff",
+                fontSize: "17px",
+                cursor: loading ? "wait" : "pointer",
+                transition: "all 0.3s",
+                animation: orbPulse ? "pulse 0.7s ease infinite" : "none",
+                letterSpacing: "0.15em",
+                fontFamily: "'Georgia', serif",
+              }}
+            >{loading ? "Reading the cosmos..." : "✦ Reveal Meaning"}</button>
+          </div>
+
+          {error && (
+            <p style={{ color: "#f87171", fontSize: "13px", textAlign: "center", marginBottom: "14px" }}>{error}</p>
+          )}
+
+          <p style={{
+            fontSize: "11px", color: "#6b5a8a",
+            letterSpacing: "0.2em", textTransform: "uppercase",
+            marginBottom: "10px", textAlign: "center",
+          }}>Popular numbers</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "7px", justifyContent: "center" }}>
             {["111","222","333","444","555","777","888","999","1111","1212"].map(n => (
               <button key={n} className="glyph-btn"
-                onClick={() => { setInput(n); }}
+                onClick={() => setInput(n)}
                 style={{
-                  background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: "8px", padding: "6px 14px", color: "#c4b5fd",
-                  fontSize: "13px", cursor: "pointer", transition: "all 0.2s",
-                  fontFamily: "'Georgia', serif", letterSpacing: "0.1em",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "8px",
+                  padding: "5px 13px",
+                  color: "#c4b5fd",
+                  fontSize: "13px",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  fontFamily: "'Georgia', serif",
+                  letterSpacing: "0.1em",
                 }}
               >{n}</button>
             ))}
           </div>
         </div>
-      </div>
 
-      {loading && (
-        <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
-          <div style={{ fontSize: "40px", animation: "spin 2s linear infinite", display: "inline-block" }}>✦</div>
-          <p style={{ color: "#9d8bbd", fontSize: "13px", letterSpacing: "0.2em", marginTop: "12px" }}>READING THE COSMOS…</p>
-        </div>
-      )}
-
-      {showResult && result && (
-        <div style={{
-          width: "100%", maxWidth: "520px",
-          animation: "fadeUp 0.7s ease forwards",
-          position: "relative", zIndex: 1,
-        }}>
-          <div style={{ textAlign: "center", marginBottom: "24px" }}>
-            <div style={{
-              display: "inline-block",
-              background: `radial-gradient(circle, ${accentColor}40, ${accentColor}15)`,
-              border: `2px solid ${accentColor}60`,
-              borderRadius: "50%", width: "100px", height: "100px",
-              lineHeight: "100px", fontSize: "28px", fontWeight: "300",
-              letterSpacing: "0.05em", color: accentColor,
-              boxShadow: `0 0 40px ${accentColor}40`,
-              animation: "shimmer 2.5s ease infinite",
-            }}>{result.number}</div>
+        {/* Loading */}
+        {loading && (
+          <div style={{ textAlign: "center", position: "relative", zIndex: 1, marginBottom: "20px" }}>
+            <div style={{ fontSize: "36px", animation: "spin 2s linear infinite", display: "inline-block" }}>✦</div>
+            <p style={{ color: "#9d8bbd", fontSize: "12px", letterSpacing: "0.2em", marginTop: "10px" }}>READING THE COSMOS…</p>
           </div>
+        )}
 
+        {/* Result */}
+        {showResult && result && (
           <div style={{
-            background: "rgba(255,255,255,0.04)",
-            border: `1px solid ${accentColor}30`,
-            borderRadius: "24px",
-            overflow: "hidden",
-            boxShadow: `0 0 60px ${accentColor}15`,
+            width: "100%", maxWidth: "500px",
+            animation: "fadeUp 0.7s ease forwards",
+            position: "relative", zIndex: 1,
           }}>
-            <div style={{
-              padding: "28px 28px 20px",
-              borderBottom: `1px solid ${accentColor}20`,
-              background: `linear-gradient(135deg, ${accentColor}12, transparent)`,
-            }}>
-              <h2 style={{
-                margin: "0 0 8px",
-                fontSize: "24px", fontWeight: "400",
-                letterSpacing: "0.08em",
+            {/* Number badge */}
+            <div style={{ textAlign: "center", marginBottom: "20px" }}>
+              <div style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: `radial-gradient(circle, ${accentColor}40, ${accentColor}15)`,
+                border: `2px solid ${accentColor}60`,
+                borderRadius: "50%",
+                width: "96px", height: "96px",
+                fontSize: "26px", fontWeight: "300",
+                letterSpacing: "0.05em",
                 color: accentColor,
-              }}>{result.data.title}</h2>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {result.data.keywords.map(k => (
-                  <span key={k} style={{
-                    background: `${accentColor}20`, border: `1px solid ${accentColor}40`,
-                    borderRadius: "20px", padding: "3px 12px",
-                    fontSize: "11px", color: accentColor, letterSpacing: "0.1em",
-                  }}>{k}</span>
+                boxShadow: `0 0 40px ${accentColor}40`,
+                animation: "shimmer 2.5s ease infinite",
+              }}>{result.number}</div>
+            </div>
+
+            {/* Result card */}
+            <div style={{
+              background: "rgba(255,255,255,0.04)",
+              border: `1px solid ${accentColor}30`,
+              borderRadius: "24px",
+              overflow: "hidden",
+              boxShadow: `0 0 60px ${accentColor}15`,
+              marginBottom: "16px",
+            }}>
+              {/* Title */}
+              <div style={{
+                padding: "24px 24px 18px",
+                borderBottom: `1px solid ${accentColor}20`,
+                background: `linear-gradient(135deg, ${accentColor}12, transparent)`,
+              }}>
+                <h2 style={{
+                  fontSize: "22px", fontWeight: "400",
+                  letterSpacing: "0.08em",
+                  color: accentColor,
+                  marginBottom: "10px",
+                }}>{result.data.title}</h2>
+                <div style={{ display: "flex", gap: "7px", flexWrap: "wrap" }}>
+                  {result.data.keywords.map(k => (
+                    <span key={k} style={{
+                      background: `${accentColor}20`,
+                      border: `1px solid ${accentColor}40`,
+                      borderRadius: "20px",
+                      padding: "3px 11px",
+                      fontSize: "11px",
+                      color: accentColor,
+                      letterSpacing: "0.08em",
+                    }}>{k}</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Meaning */}
+              <div style={{ padding: "20px 24px", borderBottom: `1px solid rgba(255,255,255,0.05)` }}>
+                <p style={{
+                  lineHeight: "1.85", fontSize: "15px",
+                  color: "#d4c8e8", fontStyle: "italic",
+                }}>{result.data.meaning}</p>
+              </div>
+
+              {/* Metadata */}
+              <div style={{
+                display: "grid", gridTemplateColumns: "1fr 1fr",
+                gap: "1px", background: "rgba(255,255,255,0.05)",
+              }}>
+                {[
+                  ["✦ Chakra", result.data.chakra],
+                  ["⊕ Element", result.data.element],
+                  ["◈ Frequency", result.data.frequency],
+                  ["◯ Energy Color", <span style={{ color: accentColor }}>●</span>],
+                ].map(([label, val]) => (
+                  <div key={label} style={{ padding: "14px 18px", background: "rgba(255,255,255,0.02)" }}>
+                    <div style={{
+                      fontSize: "9px", color: "#6b5a8a",
+                      letterSpacing: "0.2em", textTransform: "uppercase",
+                      marginBottom: "4px",
+                    }}>{label}</div>
+                    <div style={{ fontSize: "14px", color: "#e8e0f0" }}>{val}</div>
+                  </div>
                 ))}
+              </div>
+
+              {/* Affirmation */}
+              <div style={{
+                padding: "20px 24px",
+                background: `linear-gradient(135deg, ${accentColor}08, transparent)`,
+                borderTop: `1px solid ${accentColor}20`,
+              }}>
+                <p style={{
+                  fontSize: "10px", color: "#6b5a8a",
+                  letterSpacing: "0.25em", textTransform: "uppercase",
+                  marginBottom: "10px",
+                }}>✧ Your Affirmation</p>
+                <p style={{
+                  fontSize: "15px", lineHeight: "1.7",
+                  color: accentColor, fontStyle: "italic",
+                  borderLeft: `2px solid ${accentColor}50`,
+                  paddingLeft: "14px",
+                }}>"{result.data.affirmation}"</p>
               </div>
             </div>
 
-            <div style={{ padding: "24px 28px", borderBottom: `1px solid rgba(255,255,255,0.05)` }}>
-              <p style={{
-                margin: 0, lineHeight: "1.85", fontSize: "15px",
-                color: "#d4c8e8", fontStyle: "italic",
-              }}>{result.data.meaning}</p>
-            </div>
-
-            <div style={{
-              display: "grid", gridTemplateColumns: "1fr 1fr",
-              gap: "1px", background: "rgba(255,255,255,0.05)",
-            }}>
-              {[
-                ["✦ Chakra", result.data.chakra],
-                ["⊕ Element", result.data.element],
-                ["◈ Frequency", result.data.frequency],
-                ["◯ Energy Color", <span style={{ color: accentColor }}>●</span>],
-              ].map(([label, val]) => (
-                <div key={label} style={{
-                  padding: "16px 20px",
-                  background: "rgba(255,255,255,0.02)",
-                }}>
-                  <div style={{ fontSize: "10px", color: "#6b5a8a", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "4px" }}>{label}</div>
-                  <div style={{ fontSize: "15px", color: "#e8e0f0" }}>{val}</div>
-                </div>
-              ))}
-            </div>
-
-            <div style={{
-              padding: "24px 28px",
-              background: `linear-gradient(135deg, ${accentColor}08, transparent)`,
-              borderTop: `1px solid ${accentColor}20`,
-            }}>
-              <p style={{ fontSize: "10px", color: "#6b5a8a", letterSpacing: "0.25em", textTransform: "uppercase", margin: "0 0 10px" }}>
-                ✧ Your Affirmation
-              </p>
-              <p style={{
-                margin: 0, fontSize: "15px", lineHeight: "1.7",
-                color: accentColor, fontStyle: "italic",
-                borderLeft: `2px solid ${accentColor}50`,
-                paddingLeft: "16px",
-              }}>"{result.data.affirmation}"</p>
-            </div>
+            <p style={{
+              textAlign: "center", fontSize: "11px",
+              color: "#4a3a6a", letterSpacing: "0.1em",
+              paddingBottom: "20px",
+            }}>✦ The universe speaks in patterns — you were meant to see {result.number} ✦</p>
           </div>
-
-          <p style={{ textAlign: "center", fontSize: "11px", color: "#4a3a6a", marginTop: "20px", letterSpacing: "0.1em" }}>
-            ✦ The universe speaks in patterns — you were meant to see {result.number} ✦
-          </p>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }
